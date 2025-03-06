@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Zombie : MonoBehaviour
 {
@@ -10,101 +11,109 @@ public class Zombie : MonoBehaviour
 
     private bool _isDead = false;
 
+    [SerializeField] private SortingGroup _sort;
 
 
-    public void Init(Vector3 pos)
+    public void Init(Vector3 pos, int line)
     {
         this.transform.position = pos;
 
         _isDead = false;
+
+        this.gameObject.layer = line + 7;
+
+        _sort.sortingOrder = 5 - line;
+
+        _jumpAble = true;
+        _jump = false;
+        _up = false;
+        _hero = false;
+        _zombie = false;
+        _down = false;
+
+        this.gameObject.name = Random.Range(0, 1000).ToString();
     }
 
     #region Move
 
-    [SerializeField] private LayerMask _layer;
-
-    [SerializeField] private bool _jumpAble = true;
-    [SerializeField] private bool _jump = false;
-    [SerializeField] private bool _up = false;
+    private bool _jumpAble = true;
+    private bool _jump = false;
+    private bool _up = false;
     private bool _upFront = false;
-    [SerializeField] private bool _hero = false;
-    [SerializeField] private bool _zombie = false;
-    [SerializeField] private bool _down = false;
+    private bool _hero = false;
+    private bool _zombie = false;
+    private bool _down = false;
     private float _frontZombieSpeed;
 
     private Vector2 _force = Vector2.zero;
 
     private void Move()
     {
-        if (!Physics2D.OverlapBox(new Vector2(-0.65f + this.transform.position.x, 0.6f + this.transform.position.y), new Vector2(0.1f, 0.7f), 0))
-        {
-            _hero = false;
+        _zombie = false;
 
-            _zombie = false;
-        }
-        else
-        {
-            Collider2D[] colliders = Physics2D.OverlapBoxAll(new Vector2(-0.65f + this.transform.position.x, 0.6f + this.transform.position.y), new Vector2(0.1f, 0.7f), 0);
+        _hero = false;
 
-            foreach(Collider2D col in colliders)
+        Collider2D[] colliders = Physics2D.OverlapBoxAll(new Vector2(-0.65f + this.transform.position.x, 0.5f + this.transform.position.y), new Vector2(0.1f, 0.9f), 0);
+
+        foreach (Collider2D col in colliders)
+        {
+            if (col.tag == "Hero")
             {
-                if(col.tag == "Hero")
-                {
-                    _hero = true;
-
-                    _zombie = false;
-                }
-
-                if(col.tag == "Zombie")
-                {
-                    _frontZombieSpeed = col.GetComponent<Zombie>()._force.x;
-
-                    _zombie = true;
-
-                    _hero = false;
-                }
+                _hero = true;
             }
-        }
 
-        if (Physics2D.OverlapBox(new Vector2(-0.25f + this.transform.position.x, 1.1f + this.transform.position.y), new Vector2(0.7f, 0.1f), 0))
-        {
-            if(Physics2D.OverlapBox(new Vector2(-0.25f + this.transform.position.x, 1.1f + this.transform.position.y), new Vector2(0.7f, 0.1f), 0).tag == "Zombie")
+            if (col.tag == "Zombie" && col.gameObject.layer == this.gameObject.layer)
             {
-                _up = true;
+                _frontZombieSpeed = col.GetComponent<Zombie>()._force.x;
 
-                if(Physics2D.OverlapBox(new Vector2(-0.25f + this.transform.position.x, 1.1f + this.transform.position.y), new Vector2(0.7f, 0.1f), 0).transform.position.x 
-                    <= this.transform.position.x + 0.2f)
-                {
-                    _upFront = true;
-                }
+                _zombie = true;
             }
-        }
-        else
-        {
-            _up = false;
-
-            _upFront = false;
         }
         
 
-        if(Physics2D.OverlapBox(new Vector2(-0.35f + this.transform.position.x, -0.1f + this.transform.position.y), new Vector2(0.5f, 0.1f), 0))
+        
+        _up = false;
+
+        _upFront = false;
+
+        colliders = Physics2D.OverlapBoxAll(new Vector2(-0.25f + this.transform.position.x, 1.1f + this.transform.position.y), new Vector2(0.7f, 0.1f), 0);
+
+        foreach (Collider2D col in colliders)
         {
-            _down = true;
+            if (col.tag == "Zombie" && this.gameObject.layer == col.gameObject.layer)
+            {
+                _up = true;
+
+                if (col.transform.position.x <= this.transform.position.x + 0.2f)
+                {
+                    _upFront = true;
+
+                    break;
+                }
+            }
         }
-        else
+        
+
+        
+        _down = false;
+
+        colliders = Physics2D.OverlapBoxAll(new Vector2(-0.4f + this.transform.position.x, -0.1f + this.transform.position.y), new Vector2(0.4f, 0.1f), 0);
+
+        foreach (Collider2D col in colliders)
         {
-            _down = false;
+            if (this.gameObject.layer == col.gameObject.layer)
+            {
+                _down = true;
+
+                break;
+            }
         }
+
 
 
         _force = new Vector2(-1.5f, 0f);
 
-        /*if (!_down && !_jump)
-        {
-            _force.y = -5f;
-        }*/
-
-        if(_hero)
+        if (_hero)
         {
             _anim.SetBool("IsAttacking", true);
 
@@ -115,9 +124,9 @@ public class Zombie : MonoBehaviour
             _anim.SetBool("IsAttacking", false);
         }
 
-        if(_zombie)
+        if (_zombie)
         {
-            if(_jumpAble)
+            if (_jumpAble)
             {
                 _jump = true;
             }
@@ -126,29 +135,29 @@ public class Zombie : MonoBehaviour
                 _force.x = _frontZombieSpeed;
             }
         }
-        
-        if(_jump)
+
+        if (_jump)
         {
             _force.y = 5f;
 
-            if(_up)
+            if (_up)
             {
                 _jump = false;
 
                 StartCoroutine(JumpCoolTime());
             }
 
-            if(!_down)
+            if (!_down)
             {
                 _jump = false;
             }
         }
 
-        if(_upFront)
+        if (_upFront)
         {
-            if(!_zombie && _down)
+            if (!_zombie && _down)
             {
-                _force.x = 1.5f;
+                _force.x = 1.2f;
             }
         }
 
@@ -161,7 +170,7 @@ public class Zombie : MonoBehaviour
     {
         _jumpAble = false;
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1.5f);
 
         _jumpAble = true;
     }
@@ -193,11 +202,11 @@ public class Zombie : MonoBehaviour
     {
         Gizmos.color = Color.red;
 
-        Gizmos.DrawWireCube(new Vector2(-0.65f +this.transform.position.x, 0.6f + this.transform.position.y), new Vector2(0.1f, 0.7f));
+        Gizmos.DrawWireCube(new Vector2(-0.65f +this.transform.position.x, 0.5f + this.transform.position.y), new Vector2(0.1f, 0.9f));
 
         Gizmos.DrawWireCube(new Vector2(-0.25f + this.transform.position.x, 1.1f + this.transform.position.y), new Vector2(0.7f, 0.1f));
 
-        Gizmos.DrawWireCube(new Vector2(-0.35f + this.transform.position.x, -0.1f + this.transform.position.y), new Vector2(0.5f, 0.1f));
+        Gizmos.DrawWireCube(new Vector2(-0.4f + this.transform.position.x, -0.1f + this.transform.position.y), new Vector2(0.4f, 0.1f));
 
         Gizmos.DrawWireCube(new Vector2(-1f + this.transform.position.x, 0.6f + this.transform.position.y), new Vector2(0.1f, 0.1f));
     }

@@ -66,7 +66,7 @@ public class ZombieHp : MonoBehaviour
 
     IEnumerator DeadTimer()
     {
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.2f);
 
         this.gameObject.SetActive(false);
     }

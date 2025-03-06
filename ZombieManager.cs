@@ -13,6 +13,8 @@ public class ZombieManager : MonoBehaviour
 
     private List<Zombie> _zombies = new List<Zombie>();
 
+    [SerializeField] private List<GameObject> _lines;
+
     #endregion
 
 
@@ -33,13 +35,17 @@ public class ZombieManager : MonoBehaviour
 
     private void SpawnZombie()
     {
+        int line = Random.Range(0, _lines.Count);
+
         for(int i = 0; i < _zombies.Count; i++)
         {
             if(!_zombies[i].gameObject.activeSelf)
             {
                 _zombies[i].gameObject.SetActive(true);
 
-                _zombies[i].Init(this.transform.position);
+                _zombies[i].Init(_lines[line].transform.position, line);
+
+                _zombies[i].transform.SetParent(_lines[line].transform);
 
                 _zombies[i].GetComponent<ZombieHp>().Spawn();
 
@@ -53,7 +59,7 @@ public class ZombieManager : MonoBehaviour
 
         _zombies[_zombies.Count - 1].GetComponent<ZombieHp>().Spawn();
 
-        _zombies[_zombies.Count - 1].Init(this.transform.position);
+        _zombies[_zombies.Count - 1].Init(_lines[line].transform.position, line);
     }
 
     private IEnumerator SpawnTimer()

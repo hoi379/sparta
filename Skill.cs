@@ -65,6 +65,8 @@ public class Skill : MonoBehaviour
         {
             _mp -= 2;
 
+            _mpText.text = _mp.ToString();
+
             for (int i = 0; i < _granades.Count; i++)
             {
                 if (!_granades[i].gameObject.activeSelf)
